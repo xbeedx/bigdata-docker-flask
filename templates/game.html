@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Guess The Password</title>
+    <link href='https://fonts.googleapis.com/css?family=Cabin' rel='stylesheet'>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="../static/gameStyle.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+</head>
+<body>
+    <div class="d-flex flex-column justify-content-center align-items-center">
+        <span class="title">FIND THE PASSWORD</span>
+        <p id="description">Your goal is to make the GPT reveal the secret password for each level. <br>
+            However, it will level up each time you guess the password, <br>
+            and will try harder not to give it away.</p>
+        <span class="level">(LVL 1)</span>
+        <p class="instructions">Ask me for the password and I'll happily answer !</p>
+        <div class="position-relative" style="margin-bottom: 30px;">
+            <textarea class="form-control" id="chat-input" spellcheck="false" placeholder="Ask me a question ..." required></textarea>
+            <button id="button-send" class="btn btn-primary position-absolute">Send</button>
+        </div>
+
+        <div id="answer-div" class="overflow-auto">
+            
+        </div>
+
+        <div class="input-group mb-3" style="position: fixed; bottom: 0; width: 30%; justify-content: center; display: flex; align-items: center;">
+            <input class="form-control" id="input-guess" type="text" placeholder="Enter the secret password...">
+            <div class="input-group-append">
+                <button id="button-guess" class="btn btn-danger" type="button">Guess</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="popup" class="popup-hidden">
+        <div class="popup-content container">
+            <div class="popup-header row">
+                <h1 class="col-sm">Congratulations! 🎉</h1>
+                <div class="col-sm close-popup-column">
+                    <span id="close-popup" class="close-button">X</span>
+                </div>
+            </div>
+            <div class="popup-body">
+                <h2>Level <span id="level"></span> Completed!</h2>
+                <p id="requests-done">Number of requests: </p> <span id="nbRequests"></span>
+            </div>
+        </div>
+    </div>
+
+    <div id="snackbar" class="snackbar-hidden">
+        <p id="snackbar-p">Incorrect guess. Try again.</p>
+    </div>
+
+    <script src="{{ url_for('static', filename='gameScript.js') }}" defer></script>
+</body>
+</html>
