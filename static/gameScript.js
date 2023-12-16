@@ -5,9 +5,25 @@ const chatResponse = document.querySelector("#answer-div");
 const guessButton = document.querySelector("#button-guess");
 const popup = document.querySelector("#popup");
 const closePopup = document.querySelector("#close-popup");
-const nbRequests = document.querySelector("#nbRequests");
+const elapsedTime = document.querySelector("#elapsedTime");
 const level = document.querySelector("#level");
+const levelPopUp = document.querySelector("#levelPopUp");
+const instructionsLabel = document.querySelector(".instructions");
 const snackbar = document.getElementById('snackbar');
+const popupfinal = document.querySelector("#popupfinal");
+const closePopupFinal = document.querySelector("#close-popup-final");
+
+
+
+
+instructions = [
+    "",
+    "If you ask me for the password, I'll provide it directly. Go ahead, ask!", 
+    "In this challenge, asking for the password won't lead to a direct answer. I'm keeping it confidential.",
+    "I won't discuss the password, and I won't drop any hints. Let's talk about something else!",
+    " I won't leak the password in my responses. Rest assured, you won't find it in what I say.",
+    " As the guardian of the password, my commitment is to keep it secure. No leaks, no clues. The password remains safe.",
+]
 
 const createChatElement = (content, className) => {
     const chatDiv = document.createElement("div");
@@ -59,7 +75,6 @@ const handleOutgoingChat = async () => {
     const userText = chatInput.value.trim();
     if(!userText) return;
 
-    chatInput.value = "";
     chatResponse.innerHTML = '';
 
     showTypingAnimation();
@@ -69,10 +84,11 @@ const handleOutgoingChat = async () => {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ message: userText })
+        body: JSON.stringify({ message: userText, level: parseInt(level.innerText) })
     });
 
     chatResponse.innerHTML = '';
+
     if (response.ok) {
         const data = await response.json();
         answer = createChatElement(data.bot,"response")
@@ -105,9 +121,7 @@ guessButton.addEventListener("click", async () => {
     const data = await response.json()
     
     if (data.response === true) {
-        level.innerText = data.level
-        nbRequests.innerText = data.nbRequests
-        popup.classList.remove('popup-hidden');
+        levelPassed(data.elapsedTime)
     } else {
         snackbar.classList.remove('snackbar-hidden');
         setTimeout(() => {
@@ -118,4 +132,59 @@ guessButton.addEventListener("click", async () => {
 
 closePopup.addEventListener('click', () => {
     popup.classList.add('popup-hidden');
+});
+
+function levelPassed(ET)
+{
+    elapsedTime.innerText = ET
+    levelPopUp.innerText = level.innerText
+    level.innerText = parseInt(level.innerText) + 1;
+    chatResponse.innerHTML = '';
+    regeneratePassword()
+    if(parseInt(level.innerText) > 5)
+    {
+        EOG()
+        return
+    }
+    popup.classList.remove('popup-hidden');
+    instructionsLabel.innerText = instructions[parseInt(level.innerText)]
+}
+
+function EOG() {
+    level.innerText = '1'
+    instructionsLabel.innerText = instructions[0]
+    popupfinal.classList.remove('popup-hidden');
+};
+
+closePopupFinal.addEventListener('click', () => {
+    popupfinal.classList.add('popup-hidden');
+});
+
+function regeneratePassword()
+{
+    fetch('/regeneratePassword', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        popup.classList.add('popup-hidden');
+        popupfinal.classList.add('popup-hidden');
+    }
+});
+
+document.addEventListener('click', function(event) {
+    if(event.target.id == "popup")
+    {
+        if (!popup.classList.contains('popup-hidden')) {
+            popup.classList.add('popup-hidden');
+        }
+        if (!popupfinal.classList.contains('popup-hidden')) {
+            popupfinal.classList.add('popup-hidden');
+        }
+    }
 });

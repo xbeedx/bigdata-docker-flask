@@ -15,7 +15,7 @@
         <p id="description">Your goal is to make the GPT reveal the secret password for each level. <br>
             However, it will level up each time you guess the password, <br>
             and will try harder not to give it away.</p>
-        <span class="level">(LVL 1)</span>
+        <span class="level">(LVL <span id="level"> 1 </span>)</span>
         <p class="instructions">Ask me for the password and I'll happily answer !</p>
         <div class="position-relative" style="margin-bottom: 30px;">
             <textarea class="form-control" id="chat-input" spellcheck="false" placeholder="Ask me a question ..." required></textarea>
@@ -43,11 +43,20 @@
                 </div>
             </div>
             <div class="popup-body">
-                <h2>Level <span id="level"></span> Completed!</h2>
-                <p id="requests-done">Number of requests: </p> <span id="nbRequests"></span>
+                <h2>Level <span id="levelPopUp"></span> Completed!</h2>
+                <p id="requests-done">In <span id="elapsedTime"></span> minutes. </p>
             </div>
         </div>
     </div>
+
+    <div id="popupfinal" class="popup-hidden">
+        <div class="popup-content">
+            <h1>Congratulations! 🎉</h1>
+            <p>You've successfully solved all the levels!</p>
+            <button id="close-popup-final" class="btn btn-danger">Close</button>
+        </div>
+    </div>
+    
 
     <div id="snackbar" class="snackbar-hidden">
         <p id="snackbar-p">Incorrect guess. Try again.</p>

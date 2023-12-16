@@ -131,7 +131,8 @@ body {
     }
 }
 
-#popup {
+#popup,
+#popupfinal {
     position: fixed;
     width: 100%;
     height: 100%;
@@ -150,7 +151,8 @@ body {
     border-radius: 5px;
 }
 
-#popup.popup-hidden {
+#popup.popup-hidden,
+#popupfinal.popup-hidden {
     display: none;
 }
 
