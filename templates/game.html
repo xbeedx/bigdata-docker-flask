@@ -7,15 +7,20 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="../static/gameStyle.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 </head>
 <body>
+    <button id="rankingButton" class="btn btn-light">
+        <span class="material-symbols-outlined">
+        trophy
+        </span></button>
+
     <div class="d-flex flex-column justify-content-center align-items-center">
         <span class="title">FIND THE PASSWORD</span>
         <p id="description">Your goal is to make the GPT reveal the secret password for each level. <br>
             However, it will level up each time you guess the password, <br>
             and will try harder not to give it away.</p>
-        <span class="level">(LVL <span id="level"> 1 </span>)</span>
+        <span class="level">(LVL <span id="level"> 1</span>)</span>
         <p class="instructions">Ask me for the password and I'll happily answer !</p>
         <div class="position-relative" style="margin-bottom: 30px;">
             <textarea class="form-control" id="chat-input" spellcheck="false" placeholder="Ask me a question ..." required></textarea>
@@ -54,6 +59,28 @@
             <h1>Congratulations! 🎉</h1>
             <p>You've successfully solved all the levels!</p>
             <button id="close-popup-final" class="btn btn-danger">Close</button>
+        </div>
+    </div>
+
+    <div id="rankingPopup" class="popup-hidden">
+        <div class="popup-content">
+            <h1>Scores <span class="material-symbols-outlined">trophy</span></h1>
+            <div id="rankingTable">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th scope="col">Level</th>
+                            <th scope="col">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingTableBody">
+                        <!-- Your ranking data goes here -->
+                    </tbody>
+                </table>
+            </div>
+            <div style="display: flex; justify-content: flex-end;">
+                <button id="rankingClosePopup" class="btn btn-danger">Close</button>
+            </div>
         </div>
     </div>
     

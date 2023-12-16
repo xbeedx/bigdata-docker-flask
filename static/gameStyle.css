@@ -131,8 +131,15 @@ body {
     }
 }
 
+#rankingButton{
+    position: absolute;
+    top: 10px;
+    right:10px;
+}
+
 #popup,
-#popupfinal {
+#popupfinal,
+#rankingPopup {
     position: fixed;
     width: 100%;
     height: 100%;
@@ -152,7 +159,8 @@ body {
 }
 
 #popup.popup-hidden,
-#popupfinal.popup-hidden {
+#popupfinal.popup-hidden,
+#rankingPopup.popup-hidden {
     display: none;
 }
 

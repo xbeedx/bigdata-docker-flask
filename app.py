@@ -136,6 +136,7 @@ def chat():
 def game():
     global password 
     password = random.choice(words.words())
+    print(password)
     global startTime
     startTime = time.time()
     return render_template('game.html')
@@ -154,11 +155,35 @@ def regeneratePassword():
     try:
         global password 
         password = random.choice(words.words())
-        print(password)
+        global startTime
+        startTime = time.time()
         return jsonify({'':''})
     except Exception as e:
         print(e)
         return jsonify({'bot': "Erreur : impossible de recevoir une réponse."}), 500
+    
+@app.route('/saveScore', methods=['POST'])
+def saveScore():
+    data = request.get_json()
+    elapsedTime = data['score']
+    level = data['level']
+    result = mongo_db["scores"].insert_one({'score': elapsedTime, 'level': level})
+    return jsonify({'':''})
+
+@app.route('/getBestScores', methods=['POST'])
+def getBestScores():
+    try:
+        bestScores = []
+        for level in range(1,6):
+            bestScoreCursor = mongo_db["scores"].find({'level': str(level)}).sort('score', 1).limit(1)
+            bestScore = list(bestScoreCursor)
+            bestScores.append(bestScore[0]['score'] if bestScore else None)
+        print(bestScores)
+        return jsonify({'bestScores': bestScores})
+    except Exception as e:
+        print(e)
+        return jsonify({'bot': "Erreur : impossible de recevoir une réponse."}), 500
+
     
 
 

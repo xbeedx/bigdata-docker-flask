@@ -12,8 +12,10 @@ const instructionsLabel = document.querySelector(".instructions");
 const snackbar = document.getElementById('snackbar');
 const popupfinal = document.querySelector("#popupfinal");
 const closePopupFinal = document.querySelector("#close-popup-final");
-
-
+const rankingButton = document.querySelector("#rankingButton");
+const rankingClosePopup = document.querySelector("#rankingClosePopup");
+const rankingPopup = document.querySelector("#rankingPopup");
+const rankingTableBody = document.querySelector("#rankingTableBody");
 
 
 instructions = [
@@ -138,6 +140,7 @@ function levelPassed(ET)
 {
     elapsedTime.innerText = ET
     levelPopUp.innerText = level.innerText
+    saveBestScore(ET,level.innerText)
     level.innerText = parseInt(level.innerText) + 1;
     chatResponse.innerHTML = '';
     regeneratePassword()
@@ -150,6 +153,17 @@ function levelPassed(ET)
     instructionsLabel.innerText = instructions[parseInt(level.innerText)]
 }
 
+function saveBestScore(ET, lvl)
+{
+    fetch('/saveScore', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ score: ET, level: lvl })
+    });
+}
+
 function EOG() {
     level.innerText = '1'
     instructionsLabel.innerText = instructions[0]
@@ -158,6 +172,42 @@ function EOG() {
 
 closePopupFinal.addEventListener('click', () => {
     popupfinal.classList.add('popup-hidden');
+});
+
+rankingButton.addEventListener('click', async () => {
+    const response = await fetch('/getBestScores', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+    if (response.ok) {
+        rankingTableBody.innerHTML = ""
+        const data = await response.json();
+        scores = data.bestScores
+        console.log(scores)
+
+        i = 1
+        scores.forEach(score => {
+            const levelCol = document.createElement("td");
+            const scoreCol = document.createElement("td");
+            levelCol.innerText = i
+            scoreCol.innerText = score
+            i++
+            const scoreRow = document.createElement("tr");
+            scoreRow.appendChild(levelCol);
+            scoreRow.appendChild(scoreCol);
+            rankingTableBody.appendChild(scoreRow);
+        });
+
+       
+
+    }
+    rankingPopup.classList.remove('popup-hidden');
+});
+
+rankingClosePopup.addEventListener('click', () => {
+    rankingPopup.classList.add('popup-hidden');
 });
 
 function regeneratePassword()
@@ -174,6 +224,7 @@ document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         popup.classList.add('popup-hidden');
         popupfinal.classList.add('popup-hidden');
+        rankingPopup.classList.add('popup-hidden');
     }
 });
 
@@ -183,8 +234,17 @@ document.addEventListener('click', function(event) {
         if (!popup.classList.contains('popup-hidden')) {
             popup.classList.add('popup-hidden');
         }
+    }
+
+    if(event.target.id == "popupfinal"){
         if (!popupfinal.classList.contains('popup-hidden')) {
             popupfinal.classList.add('popup-hidden');
+        }
+    }
+
+    if(event.target.id == "rankingPopup"){
+        if (!rankingPopup.classList.contains('popup-hidden')) {
+            rankingPopup.classList.add('popup-hidden');
         }
     }
 });
