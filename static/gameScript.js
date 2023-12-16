@@ -166,7 +166,7 @@ function saveBestScore(ET, lvl)
 
 function EOG() {
     level.innerText = '1'
-    instructionsLabel.innerText = instructions[0]
+    instructionsLabel.innerText = instructions[1]
     popupfinal.classList.remove('popup-hidden');
 };
 
