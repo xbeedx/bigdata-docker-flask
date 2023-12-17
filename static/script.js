@@ -102,7 +102,7 @@ const handleOutgoingChat = async () => {
                         <div class="chat-details">
                             <img src="/static/images/chatgpt-logo.webp" width="90" height="90" alt="user-img">
                             <div class="markdown-body">
-                                <p>${formattedContent}<p>`;
+                                <p>${formattedContent}</p>`;
     
         // Ajouter l'image si l'URL est disponible
         if (data.image_url) {
