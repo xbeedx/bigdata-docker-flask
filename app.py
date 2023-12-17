@@ -22,6 +22,8 @@ load_dotenv()
 
 app = Flask(__name__)
 
+nltk.download('words')
+
 gamePrompts = [
     "",
     "",
@@ -270,7 +272,7 @@ def chat():
         return jsonify({'bot': bot_response})
     except Exception as e:
         print(e)
-        return jsonify({'bot': "Erreur : impossible de recevoir une réponse."}), 500
+        return jsonify({'bot': e}), 500
     
 def create_collection(parameters):
     name=parameters.get("name")
@@ -392,7 +394,7 @@ def regeneratePassword():
         return jsonify({'':''})
     except Exception as e:
         print(e)
-        return jsonify({'bot': "Erreur : impossible de recevoir une réponse."}), 500
+        return jsonify({'bot': e}), 500
     
 @app.route('/saveScore', methods=['POST'])
 def saveScore():
@@ -413,7 +415,7 @@ def getBestScores():
         return jsonify({'bestScores': bestScores})
     except Exception as e:
         print(e)
-        return jsonify({'bot': "Erreur : impossible de recevoir une réponse."}), 500
+        return jsonify({'bot': e}), 500
 
     
 
@@ -446,7 +448,7 @@ def gameChat():
         return jsonify({'bot': bot_response})
     except Exception as e:
         print(e)
-        return jsonify({'bot': "Erreur : impossible de recevoir une réponse."}), 500
+        return jsonify({'bot': e}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
