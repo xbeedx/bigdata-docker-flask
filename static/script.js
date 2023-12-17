@@ -110,6 +110,11 @@ const handleOutgoingChat = async () => {
                                     </div>
                                     <span onclick="copyResponse(this)" class="material-symbols-rounded">content_copy</span>
                                   </div>`;
+
+            // Ajouter l'image si l'URL est disponible
+        if (data.image_url) {
+                chatHtml += `<img src="${data.image_url}" alt="Analyse des Catégories" style="max-width: 100%; height: auto;">`;
+            }
         const incomingChatDiv = createChatElement(incomingChatHtml, "incoming");
         chatContainer.appendChild(incomingChatDiv);
         chatContainer.scrollTo(0, chatContainer.scrollHeight);

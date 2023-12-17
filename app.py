@@ -4,12 +4,14 @@ from uuid import uuid4
 import openai
 import redis
 import numpy as np
+import pandas as pd
 import random
 import nltk
 import time
 import bleach
+import matplotlib.pyplot as plt
 
-
+from flask import send_file, url_for
 from bson import ObjectId
 from tabulate import tabulate
 from markdown import markdown
@@ -18,12 +20,27 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 from flask import Flask, request, jsonify, render_template, redirect, url_for
 
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import accuracy_score
+
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk import pos_tag
+from langdetect import detect
+import string
+
 load_dotenv()
 
 app = Flask(__name__)
 
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('stopwords')
 nltk.download('words')
 
+# Prompts pour le jeu
 gamePrompts = [
     "",
     "",
@@ -50,6 +67,95 @@ def get_embedding(text):
     response = openai.Embedding.create(input=[text], engine="text-embedding-ada-002")
     return response["data"][0]["embedding"]
 
+# Fonction pour extraire les mots clés importants d'un texte (au moins 3)
+def extract_important_keywords(texts, top_n=10):
+    # Détecte la langue et utilise les stopwords correspondants
+    lang = detect(texts[0])
+    try:
+        lang_stopwords = set(stopwords.words(lang))
+    except:
+        lang_stopwords = set(stopwords.words('english'))  # Fallback sur l'anglais
+
+    # Ajouter les signes de ponctuation aux stopwords
+    lang_stopwords.update(string.punctuation)
+
+    # Tokenize et filtre les stopwords
+    words = [word for text in texts for word in word_tokenize(text) if word.lower() not in lang_stopwords]
+    tagged_words = pos_tag(words)
+
+    # Filtrer les noms propres, les noms, les adjectifs et les verbes
+    filtered_words = [word for word, tag in tagged_words if tag in ['NNP', 'NN', 'JJ', 'VB']]
+
+    vect = TfidfVectorizer(stop_words=lang_stopwords)
+    tfidf_matrix = vect.fit_transform([' '.join(filtered_words)])
+    feature_array = np.array(vect.get_feature_names_out())
+    tfidf_sorting = np.argsort(tfidf_matrix.toarray()).flatten()[::-1]
+
+    top_keywords = feature_array[tfidf_sorting][:top_n]
+    return top_keywords.tolist()
+
+# Fonction pour entraîner un modèle de classification
+def get_openai_classification(text):
+    openai.api_key = os.getenv('OPENAI_API_KEY')
+    
+    response = openai.Completion.create(
+            engine="text-davinci-003",  
+            prompt=f"Classify the following text into a single category (for example, if the text talk about programming the category will be Programming): '{text}'\nCategory:",
+            max_tokens=10,  
+            temperature=0 
+        )
+
+    category = response.choices[0].text.strip()
+    return category.split('\n')[0].strip()
+
+# Fonction pour compter les occurrences de chaque catégorie
+def get_category_counts():
+    try:
+        # Récupérer toutes les catégories de la collection
+        conversations = mongo_collection.find({}, {"category": 1, "_id": 0})
+
+        # Créer un DataFrame à partir des conversations
+        df = pd.DataFrame(list(conversations))
+
+        # Compter les occurrences de chaque catégorie
+        category_counts = df['category'].value_counts()
+        return category_counts
+    except Exception as e:
+        print(f"Erreur lors de la récupération des données : {e}")
+        return pd.Series()
+
+# Fonction pour tracer un graphique des catégories
+def plot_category_counts(category_counts):
+    plt.figure(figsize=(10, 6))
+    category_counts.plot(kind='bar')
+    plt.xlabel('Catégorie')
+    plt.ylabel('Nombre d’Occurrences')
+    plt.title('Fréquence des Catégories de Conversation')
+    plt.xticks(rotation=45)
+    plt.savefig('category_frequency.png')
+
+# Fonction pour analyser les catégories de conversation
+def category_analysis():
+    category_counts = get_category_counts()
+    if not category_counts.empty:
+        plot_category_counts(category_counts)
+        return 'category_frequency.png'
+    else:
+        return "Aucune donnée de catégorie disponible."
+
+# Fonction pour obtenir l'URL de l'image du graphique des catégories
+def get_category_plot_url():
+    image_path = category_analysis()
+    if image_path.endswith('.png'):
+        return '/category_frequency.png'  # URL directe
+    else:
+        return None
+
+# Route pour servir l'image du graphique des catégories
+@app.route('/category_frequency.png')
+def serve_category_image():
+    return send_file('category_frequency.png', mimetype='image/png')
+
 # Page d'accueil qui charge le chat
 @app.route('/')
 def index():
@@ -58,6 +164,7 @@ def index():
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
+        similarity = 0.0
         data = request.get_json()
         user_message = data['message']
         
@@ -232,6 +339,18 @@ def chat():
                     },
                 },
             },
+            {
+                "type": "function",
+                "function": {
+                    "name": "category_analysis",
+                    "description": "Analyse category trends",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": []
+                    },
+                },
+        }
         ]
         
         # Interaction avec l'API OpenAI
@@ -253,27 +372,42 @@ def chat():
                 "print_collection": print_collection,
                 "remove_value_collection": remove_value_collection,
                 "remove_collection": remove_collection,
-                "edit_couple_collection": edit_couple_collection
+                "edit_couple_collection": edit_couple_collection,
+                "category_analysis": category_analysis
             }
 
             function_to_call = available_functions[tool_calls[0].function.name]
             function_args = json.loads(tool_calls[0].function.arguments)
-            if(function_to_call == game):
+            if function_to_call == game:
                 return jsonify({"redirect": tool_calls[0].function.name})
+            if function_to_call == category_analysis:
+                image_url = get_category_plot_url()
+                return jsonify({'bot': 'Voici l\'analyse des catégories :', 'image_url': image_url})
             bot_response = function_to_call(function_args)
-        
+
+        # Je recherche les mots clés importants dans la question de l'utilisateur et la réponse du bot
+        keywords = extract_important_keywords([user_message, bot_response])
+
+        # Je recherche la catégorie de la question de l'utilisateur et de la réponse du bot
+        category = get_openai_classification(keywords)
+
         # Je sauvegarde de la conversation dans MongoDB
-        mongo_collection.insert_one({'user': user_message, 'bot': bot_response})
+        mongo_collection.insert_one({'user': user_message, 'bot': bot_response, 'similarity': round(similarity, 1), 'keywords': keywords, 'category': category})
         
         # Je met en cache de la dernière question et réponse avec Redis
         redis_client.set('last_user_question', user_message)
         redis_client.set('last_bot_response', bot_response)
+        redis_client.set('similarity', similarity)
         
         return jsonify({'bot': bot_response})
     except Exception as e:
         print(e)
         return jsonify({'bot': e}), 500
     
+@app.route('/download/<filename>')
+def download_file(filename):
+    return send_file(filename, as_attachment=True, attachment_filename=filename)
+
 def create_collection(parameters):
     name=parameters.get("name")
     mongo_db[name]
@@ -353,7 +487,7 @@ def print_collection_name(name):
 
     headers = ['Id','Key', 'Value']
 
-    html_header = f"<h1>Collection: {name}</h2>"
+    html_header = f"Collection: {name}"
 
     id_key_value_pairs = list(zip(all_ids,all_keys, all_values))
 
