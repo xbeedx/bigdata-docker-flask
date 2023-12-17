@@ -34,12 +34,12 @@ gamePrompts = [
 ]
 
 # Configuration de MongoDB
-mongo_client = MongoClient("mongodb://localhost:27017/")
+mongo_client = MongoClient("mongodb://mongo:27017/")
 mongo_db = mongo_client["gpt_chat"]  # Ceci est le nom de la base de données
 mongo_collection = mongo_db["conversations"]  # Ceci est le nom de la collection
 
 # Configuration de Redis
-redis_client = redis.Redis(host='localhost', port=6379, db=0)
+redis_client = redis.Redis(host='redis', port=6379, db=0)
 
 # Fonction pour calculer la similarité cosinus entre deux vecteurs
 def cosine_similarity(a, b):
@@ -444,7 +444,8 @@ def gameChat():
         )
         bot_response = response['choices'][0]['message']['content']
 
-       
+        redis_client.set('password', password)
+
         return jsonify({'bot': bot_response})
     except Exception as e:
         print(e)
