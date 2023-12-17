@@ -1,0 +1,208 @@
+body {
+    width: 100%;
+    height: 100vh;
+    background: url(images/bg-hero.png), #121FB1;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    overflow: hidden;
+}
+
+.title {
+    margin-top: 7%;
+    color: #FFF;
+    font-family: Meglona;
+    font-size: 100px;
+    line-height: 1;
+}
+
+#description{
+    color: #FFF;
+    text-align: center;
+    font-family: Cabin;
+    font-size: 12px;
+    margin-bottom: 40px;
+}
+
+.level,
+.instructions {
+    color: #FFF;
+    text-align: center;
+    font-family: Cabin;
+    font-size: 18px;
+}
+
+#chat-input {
+    width: 40vw;
+    height: 20vh;
+    border-radius: 10px;
+    background: #FFF;
+    resize: none;
+    padding: 10px;
+}
+
+#chat-input::placeholder {
+    color: #E9E9E9;
+    font-family: Cabin;
+    font-size: 20px;
+}
+
+#button-send {
+    width: 13%;
+    height: 30%;
+    border-radius: 10px;
+    color: #FFF;
+    font-family: Cabin;
+    font-size: 18px;
+    bottom: 5px;
+    right: 5px;
+}
+
+#input-guess {
+    border-radius: 10px;
+    background: #FFF;
+    margin-right: 10px;
+}
+
+#input-guess::placeholder {
+    color: #E9E9E9;
+    font-family: Cabin;
+    font-size: 15px;
+}
+
+#button-guess {
+    width: auto;
+    height: 50px;
+    border-radius: 10px;
+    color: #FFF;
+    font-family: Cabin;
+    font-size: 18px;
+}
+
+#answer-div{
+    color: #FFF;
+    max-width: 500px;
+    text-align: center;
+    height: 150px;
+}
+
+.response{
+    overflow:auto;
+}
+
+.loading-ghost {
+    width: 30vw;
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    column-gap: 1rem;
+    margin: 10px;
+}
+
+.col-span,
+.h-2
+{
+    border-radius: 9999px;
+    background-color: #374151;
+    height: 1rem;
+}
+.loading-ghost .col-span-2 {
+    grid-column: span 2 / auto;
+    
+}
+
+.loading-ghost .col-span-1 {
+    grid-column: span 1 / auto;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+#rankingButton{
+    position: absolute;
+    top: 10px;
+    right:10px;
+}
+
+#popup,
+#popupfinal,
+#rankingPopup {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.popup-content {
+    width:50%;
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+#popup.popup-hidden,
+#popupfinal.popup-hidden,
+#rankingPopup.popup-hidden {
+    display: none;
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.popup-header h1 {
+    font-size: 2em;
+}
+
+.popup-body h2 {
+    font-size: 1.5em;
+}
+
+.close-popup-column
+{
+    display:flex;
+    flex-direction: row-reverse;
+    margin-right: 10px;
+}
+.close-button {
+    color: rgba(255, 0, 0, 0.5);
+    cursor:pointer;
+}
+
+#snackbar {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 0, 0, 0.7);
+    color: white;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+#snackbar-p{
+    display: contents;
+}
+
+#snackbar.snackbar-hidden {
+    display: none;
+}
