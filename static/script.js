@@ -105,7 +105,7 @@ const handleOutgoingChat = async () => {
                                     <div class="chat-details">
                                         <img src="/static/images/chatgpt-logo.webp" width="90" height="90" alt="user-img">
                                         <div class="markdown-body"
-                                            ${formattedContent}
+                                            <p>${formattedContent}<p>
                                         </div>
                                     </div>
                                     <span onclick="copyResponse(this)" class="material-symbols-rounded">content_copy</span>
