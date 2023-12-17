@@ -98,20 +98,21 @@ const handleOutgoingChat = async () => {
             window.location.href = '/'+data.redirect
             return
         }
-        const incomingChatHtml = `<div class="chat-content">
-                                    <div class="chat-details">
-                                        <img src="/static/images/chatgpt-logo.webp" width="90" height="90" alt="user-img">
-                                        <div class="markdown-body"
-                                            <p>${formattedContent}</p>
-                                        </div>
-                                    </div>
-                                    <span onclick="copyResponse(this)" class="material-symbols-rounded">content_copy</span>
-                                  </div>`;
-
-            // Ajouter l'image si l'URL est disponible
+        let incomingChatHtml = `<div class="chat-content">
+                        <div class="chat-details">
+                            <img src="/static/images/chatgpt-logo.webp" width="90" height="90" alt="user-img">
+                            <div class="markdown-body">
+                                <p>${formattedContent}<p>`;
+    
+        // Ajouter l'image si l'URL est disponible
         if (data.image_url) {
-                chatHtml += `<img src="${data.image_url}" alt="Analyse des Catégories" style="max-width: 100%; height: auto;">`;
-            }
+            incomingChatHtml += `<img src="${data.image_url}" alt="Analyse des Catégories" style="width: 1000px; height: auto;">`;
+        }
+
+        incomingChatHtml += `    </div>
+                    </div>
+                    <span onclick="copyResponse(this)" class="material-symbols-rounded">content_copy</span>
+                    </div>`;
         const incomingChatDiv = createChatElement(incomingChatHtml, "incoming");
         console.log(incomingChatDiv)
 

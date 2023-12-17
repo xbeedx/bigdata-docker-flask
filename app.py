@@ -11,7 +11,7 @@ import time
 import bleach
 import matplotlib.pyplot as plt
 
-from flask import send_file, url_for
+from flask import send_file, after_this_request
 from bson import ObjectId
 from tabulate import tabulate
 from markdown import markdown
@@ -126,13 +126,14 @@ def get_category_counts():
 
 # Fonction pour tracer un graphique des catégories
 def plot_category_counts(category_counts):
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(20, 12))
     category_counts.plot(kind='bar')
     plt.xlabel('Catégorie')
     plt.ylabel('Nombre d’Occurrences')
-    plt.title('Fréquence des Catégories de Conversation')
+    plt.title('Analyse de Tendance des Catégories')
     plt.xticks(rotation=45)
-    plt.savefig('category_frequency.png')
+    # Enregistre l'image en augmentant la résolution (DPI)
+    plt.savefig('category_frequency.png', dpi=300)
 
 # Fonction pour analyser les catégories de conversation
 def category_analysis():
@@ -154,7 +155,14 @@ def get_category_plot_url():
 # Route pour servir l'image du graphique des catégories
 @app.route('/category_frequency.png')
 def serve_category_image():
-    return send_file('category_frequency.png', mimetype='image/png')
+    image_path = 'category_frequency.png'
+
+    @after_this_request
+    def cleanup(response):
+        os.remove(image_path)
+        return response
+
+    return send_file(image_path, mimetype='image/png')
 
 # Page d'accueil qui charge le chat
 @app.route('/')
