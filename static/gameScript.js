@@ -13,6 +13,7 @@ const snackbar = document.getElementById('snackbar');
 const popupfinal = document.querySelector("#popupfinal");
 const closePopupFinal = document.querySelector("#close-popup-final");
 const rankingButton = document.querySelector("#rankingButton");
+const exit = document.querySelector("#exit");
 const rankingClosePopup = document.querySelector("#rankingClosePopup");
 const rankingPopup = document.querySelector("#rankingPopup");
 const rankingTableBody = document.querySelector("#rankingTableBody");
@@ -208,6 +209,10 @@ rankingButton.addEventListener('click', async () => {
 
 rankingClosePopup.addEventListener('click', () => {
     rankingPopup.classList.add('popup-hidden');
+});
+
+exit.addEventListener('click', () => {
+    window.history.go(-1); return false;
 });
 
 function regeneratePassword()

@@ -1,11 +1,18 @@
+import json
 import os
+from uuid import uuid4
 import openai
 import redis
 import numpy as np
 import random
 import nltk
 import time
+import bleach
 
+
+from bson import ObjectId
+from tabulate import tabulate
+from markdown import markdown
 from nltk.corpus import words
 from dotenv import load_dotenv
 from pymongo import MongoClient
@@ -85,24 +92,150 @@ def chat():
             ]
 
         tools = [
-        {
-            "type": "function",
-            "function": {
-                "name": "game",
-                "description": "Play a game",
-                "parameters": {
-                    "type": "object",
-                    "properties": {},
-                    "required": []
+            {
+                "type": "function",
+                "function": {
+                    "name": "game",
+                    "description": "Play a game",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": []
+                    },
                 },
             },
-        }
+            {
+                "type": "function",
+                "function": {
+                    "name": "create_collection",
+                    "description": "create a new collection",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "The name of the collection",
+                            },
+                        },
+                        "required": ["name"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "add_value_collection",
+                    "description": "add a value to a collection",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "collection": {
+                                "type": "string",
+                                "description": "The name of the collection",
+                            },
+                            "value": {
+                                "type": "string",
+                                "description": "The value to add",
+                            },
+                            "key": {
+                                "type": "string",
+                                "description": "the key of the value",
+                            },
+                        },
+                        "required": ["collection", "value"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "print_collection",
+                    "description": "print a collection",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "collection": {
+                                "type": "string",
+                                "description": "The name of the collection",
+                            },
+                        },
+                        "required": ["collection", "value"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "remove_value_collection",
+                    "description": "remove a couple from a collection",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "collection": {
+                                "type": "string",
+                                "description": "The name of the collection",
+                            },
+                            "id": {
+                                "type": "string",
+                                "description": "The id of the couple to delete",
+                            },
+                        },
+                        "required": ["collection", "id"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "remove_collection",
+                    "description": "delete a collection",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "collection": {
+                                "type": "string",
+                                "description": "The name of the collection",
+                            },
+                        },
+                        "required": ["collection"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "edit_couple_collection",
+                    "description": "edit a couple in a collection",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "collection": {
+                                "type": "string",
+                                "description": "The name of the collection",
+                            },
+                            "id": {
+                                "type": "string",
+                                "description": "The id of the couple to edit",
+                            },
+                            "value": {
+                                "type": "string",
+                                "description": "The new value",
+                            },
+                            "key": {
+                                "type": "string",
+                                "description": "the new key",
+                            },
+                        },
+                        "required": ["collection, id, value"],
+                    },
+                },
+            },
         ]
         
         # Interaction avec l'API OpenAI
         openai.api_key = os.getenv('OPENAI_API_KEY')
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=messages,
             tools=tools,
         )
@@ -113,12 +246,19 @@ def chat():
         if tool_calls:
             available_functions = {
                 "game": game,
+                "create_collection":create_collection,
+                "add_value_collection": add_value_collection,
+                "print_collection": print_collection,
+                "remove_value_collection": remove_value_collection,
+                "remove_collection": remove_collection,
+                "edit_couple_collection": edit_couple_collection
             }
 
             function_to_call = available_functions[tool_calls[0].function.name]
-            function_to_call()
-
-            return jsonify({"redirect": tool_calls[0].function.name})
+            function_args = json.loads(tool_calls[0].function.arguments)
+            if(function_to_call == game):
+                return jsonify({"redirect": tool_calls[0].function.name})
+            bot_response = function_to_call(function_args)
         
         # Je sauvegarde de la conversation dans MongoDB
         mongo_collection.insert_one({'user': user_message, 'bot': bot_response})
@@ -131,12 +271,104 @@ def chat():
     except Exception as e:
         print(e)
         return jsonify({'bot': "Erreur : impossible de recevoir une réponse."}), 500
+    
+def create_collection(parameters):
+    name=parameters.get("name")
+    mongo_db[name]
+    return "Collection \""+name+"\" created in the current db."
+
+def add_value_collection(parameters):
+    collection=parameters.get("collection")
+    value=parameters.get("value")
+    key=parameters.get("key")
+    if not key:
+      key = str(uuid4())
+    mongo_db[collection].insert_one({key: value})
+    return print_collection_name(collection)
+
+def edit_couple_collection(parameters):
+    collection = parameters.get("collection")
+    _id = parameters.get("id")
+    value = parameters.get("value")
+
+    dct =  mongo_db[collection].find_one({"_id": ObjectId(_id)})
+    key = list(dct)[1]
+   
+    try:
+        object_id = ObjectId(_id)
+    except Exception as e:
+        object_id = _id
+
+    mongo_db[collection].update_one({"_id": object_id}, {"$set": {key: value}})
+
+    return print_collection_name(collection)
+
+def remove_value_collection(parameters):
+    collection = parameters.get("collection")
+    key = parameters.get("id")
+
+    try:
+        object_id = ObjectId(key)
+    except Exception as e:
+        object_id = key
+
+    mongo_db[collection].delete_one({"_id": object_id})
+    return print_collection_name(collection)
+
+def remove_collection(parameters):
+    collection = parameters.get("collection")
+    mongo_db[collection].drop()
+    return f"Collection {collection} deleted"
+
+def serialize_doc(doc):
+    """Serialize a MongoDB document."""
+    ids = []
+    keys = []
+    values = []
+    for key, value in doc.items():
+        if key == "_id":
+            ids.append(value)
+        else:
+            keys.append(key)
+            values.append(value)
+    ids.append("")
+    keys.append("")
+    values.append("")
+    return ids, keys, values
+
+
+def print_collection(parameters):
+    collection_name = parameters.get("collection")
+    return print_collection_name(collection_name)
+
+def print_collection_name(name):
+    collection_cursor = mongo_db[name].find()
+    collection_list = [(ids, keys, values) for ids, keys, values in (serialize_doc(doc) for doc in collection_cursor)]
+
+    all_ids = [id for ids, _, _ in collection_list for id in ids]
+    all_keys = [key for _, keys, _ in collection_list for key in keys]
+    all_values = [value for _, _, values in collection_list for value in values]
+
+    headers = ['Id','Key', 'Value']
+
+    html_header = f"<h1>Collection: {name}</h2>"
+
+    id_key_value_pairs = list(zip(all_ids,all_keys, all_values))
+
+    table = tabulate(id_key_value_pairs, headers=headers, tablefmt="pipe")
+
+    html_table = markdown(table, extensions=['markdown.extensions.nl2br'])
+
+    full_html = f"{html_header}\n{html_table}"
+
+    sanitized_html = bleach.clean(full_html, tags=[], strip=True)
+
+    return sanitized_html
 
 @app.route('/game', methods=['GET'])
 def game():
     global password 
     password = random.choice(words.words())
-    print(password)
     global startTime
     startTime = time.time()
     return render_template('game.html')
@@ -178,7 +410,6 @@ def getBestScores():
             bestScoreCursor = mongo_db["scores"].find({'level': str(level)}).sort('score', 1).limit(1)
             bestScore = list(bestScoreCursor)
             bestScores.append(bestScore[0]['score'] if bestScore else None)
-        print(bestScores)
         return jsonify({'bestScores': bestScores})
     except Exception as e:
         print(e)
@@ -206,7 +437,7 @@ def gameChat():
 
         openai.api_key = os.getenv('OPENAI_API_KEY')
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=messages,
         )
         bot_response = response['choices'][0]['message']['content']

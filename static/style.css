@@ -103,9 +103,9 @@ span.material-symbols-rounded {
   object-fit: cover;
   border-radius: 2px;
 }
-.chat .chat-details p {
+.chat .chat-details p:not(td p) {
   white-space: pre-wrap;
-  font-size: 1.05rem;
+  font-size: 1rem;
   padding: 0 50px 0 25px;
   color: var(--text-color);
   word-break: break-word;
@@ -255,4 +255,22 @@ span.material-symbols-rounded {
   line-height: 1.5;
   color: unset !important;
   background-color: unset !important;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  border-radius: 8px;
+  overflow: hidden; 
+}
+
+th, td {
+  border: 1px solid #fff;
+  text-align: left;
+  color: #fff;
+}
+
+th {
+  background-color: transparent;
 }

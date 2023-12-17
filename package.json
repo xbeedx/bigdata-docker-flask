@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@material-ui/core": "^4.12.4",
-    "showdown": "^2.1.0"
+    "showdown": "^2.1.0",
+    "showdown-table": "^1.0.1"
   }
 }

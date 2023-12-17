@@ -4,7 +4,7 @@ const chatContainer = document.querySelector(".chat-container");
 const themeButton = document.querySelector("#theme-btn");
 const deleteButton = document.querySelector("#delete-btn");
 
-var converter = new showdown.Converter();
+var converter = new showdown.Converter({extensions: ['table']});
 
 const loadDataFromLocalstorage = () => {
     const themeColor = localStorage.getItem("themeColor");
@@ -94,6 +94,7 @@ const handleOutgoingChat = async () => {
       
         console.log(data.redirect)
         formattedContent = converter.makeHtml(data.bot);
+        console.log(formattedContent)
         
         if(data.redirect)
         {
