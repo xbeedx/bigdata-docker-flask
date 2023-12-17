@@ -88,12 +88,7 @@ span.material-symbols-rounded {
   user-select: none;
   cursor: pointer;
 }
-.chat .chat-content span {
-  cursor: pointer;
-  font-size: 1.3rem;
-  color: var(--icon-color);
-  visibility: hidden;
-}
+
 .chat:hover .chat-content:not(:has(.typing-animation), :has(.error)) span {
   visibility: visible;
 }
@@ -252,4 +247,12 @@ span.material-symbols-rounded {
   span.material-symbols-rounded {
     font-size: 1.25rem!important;
   }
+}
+
+.markdown-body{
+  margin-left: 20px;
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+  line-height: 1.5;
+  color: unset !important;
+  background-color: unset !important;
 }
