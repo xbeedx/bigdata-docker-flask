@@ -22,7 +22,6 @@ const loadDataFromLocalstorage = () => {
 const createChatElement = (content, className) => {
     const chatDiv = document.createElement("div");
     chatDiv.classList.add("chat", className);
-
     chatDiv.innerHTML = content;
     return chatDiv;
 };
@@ -92,9 +91,7 @@ const handleOutgoingChat = async () => {
     if (response.ok) {
         const data = await response.json();
       
-        console.log(data.redirect)
         formattedContent = converter.makeHtml(data.bot);
-        console.log(formattedContent)
         
         if(data.redirect)
         {
@@ -105,12 +102,14 @@ const handleOutgoingChat = async () => {
                                     <div class="chat-details">
                                         <img src="/static/images/chatgpt-logo.webp" width="90" height="90" alt="user-img">
                                         <div class="markdown-body"
-                                            <p>${formattedContent}<p>
+                                            <p>${formattedContent}</p>
                                         </div>
                                     </div>
                                     <span onclick="copyResponse(this)" class="material-symbols-rounded">content_copy</span>
                                   </div>`;
         const incomingChatDiv = createChatElement(incomingChatHtml, "incoming");
+        console.log(incomingChatDiv)
+
         chatContainer.appendChild(incomingChatDiv);
         chatContainer.scrollTo(0, chatContainer.scrollHeight);
         hljs.highlightAll({});
