@@ -98,13 +98,14 @@ const handleOutgoingChat = async () => {
             window.location.href = '/'+data.redirect
             return
         }
+
+        console.log(data)
+        
         let incomingChatHtml = `<div class="chat-content">
                         <div class="chat-details">
                             <img src="/static/images/chatgpt-logo.webp" width="90" height="90" alt="user-img">
                             <div class="markdown-body">
                                 <p>${formattedContent}</p>`;
-    
-        // Ajouter l'image si l'URL est disponible
         if (data.image_url) {
             incomingChatHtml += `<img src="${data.image_url}" alt="Analyse des Catégories" style="width: 1000px; height: auto;">`;
         }

@@ -11,19 +11,15 @@ import time
 import bleach
 import matplotlib.pyplot as plt
 
-from flask import send_file, after_this_request
 from bson import ObjectId
 from tabulate import tabulate
 from markdown import markdown
 from nltk.corpus import words
 from dotenv import load_dotenv
 from pymongo import MongoClient
-from flask import Flask, request, jsonify, render_template, redirect, url_for
+from flask import Flask, request, jsonify, render_template, url_for, after_this_request, send_file
 
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.metrics import accuracy_score
 
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -69,21 +65,21 @@ def get_embedding(text):
 
 # Fonction pour extraire les mots clés importants d'un texte (au moins 3)
 def extract_important_keywords(texts, top_n=10):
-    # Détecte la langue et utilise les stopwords correspondants
+    # On détecte la langue et utilise les stopwords correspondants
     lang = detect(texts[0])
     try:
         lang_stopwords = set(stopwords.words(lang))
     except:
         lang_stopwords = set(stopwords.words('english'))  # Fallback sur l'anglais
 
-    # Ajouter les signes de ponctuation aux stopwords
+    # On ajoute les signes de ponctuation aux stopwords
     lang_stopwords.update(string.punctuation)
 
-    # Tokenize et filtre les stopwords
+    # On tokenize et filtre les stopwords
     words = [word for text in texts for word in word_tokenize(text) if word.lower() not in lang_stopwords]
     tagged_words = pos_tag(words)
 
-    # Filtrer les noms propres, les noms, les adjectifs et les verbes
+    # On filtre les noms propres, les noms, les adjectifs et les verbes
     filtered_words = [word for word, tag in tagged_words if tag in ['NNP', 'NN', 'JJ', 'VB']]
 
     vect = TfidfVectorizer(stop_words=lang_stopwords)
@@ -111,13 +107,8 @@ def get_openai_classification(text):
 # Fonction pour compter les occurrences de chaque catégorie
 def get_category_counts():
     try:
-        # Récupérer toutes les catégories de la collection
         conversations = mongo_collection.find({}, {"category": 1, "_id": 0})
-
-        # Créer un DataFrame à partir des conversations
         df = pd.DataFrame(list(conversations))
-
-        # Compter les occurrences de chaque catégorie
         category_counts = df['category'].value_counts()
         return category_counts
     except Exception as e:
@@ -132,43 +123,43 @@ def plot_category_counts(category_counts):
     plt.ylabel('Nombre d’Occurrences')
     plt.title('Analyse de Tendance des Catégories')
     plt.xticks(rotation=45)
-    # Enregistre l'image en augmentant la résolution (DPI)
-    plt.savefig('category_frequency.png', dpi=300)
+    # Définir le chemin de l'image à sauvegarder
+    image_path = os.path.join('static', 'graph', 'category_frequency.png')
+    plt.savefig(image_path, dpi=300)
+    plt.close()
 
-# Fonction pour analyser les catégories de conversation
-def category_analysis():
+# Fonction pour générer et servir l'image du graphique des catégories	
+def generate_and_serve_category_image():
     category_counts = get_category_counts()
     if not category_counts.empty:
+        os.makedirs(os.path.join('static', 'graph'), exist_ok=True)
         plot_category_counts(category_counts)
-        return 'category_frequency.png'
+        return '/static/graph/category_frequency.png'
     else:
         return "Aucune donnée de catégorie disponible."
+    
+def generate_excel_file(collection_name):
+    collection_cursor = mongo_db[collection_name].find()
+    df = pd.DataFrame(list(collection_cursor))
+    excel_path = os.path.join('static', 'files', f'{collection_name}.xlsx')
+    os.makedirs(os.path.dirname(excel_path), exist_ok=True)
+    df.to_excel(excel_path, index=False)
+    return excel_path
 
-# Fonction pour obtenir l'URL de l'image du graphique des catégories
-def get_category_plot_url():
-    image_path = category_analysis()
-    if image_path.endswith('.png'):
-        return '/category_frequency.png'  # URL directe
-    else:
-        return None
-
-# Route pour servir l'image du graphique des catégories
-@app.route('/category_frequency.png')
-def serve_category_image():
-    image_path = 'category_frequency.png'
-
-    @after_this_request
-    def cleanup(response):
-        os.remove(image_path)
-        return response
-
-    return send_file(image_path, mimetype='image/png')
+@app.route('/download/<collection_name>')
+def download_collection_as_excel(collection_name):
+    try:
+        excel_path = generate_excel_file(collection_name)
+        return send_file(excel_path, as_attachment=True, download_name=f'{collection_name}.xlsx')
+    except Exception as e:
+        return str(e)
 
 # Page d'accueil qui charge le chat
 @app.route('/')
 def index():
     return render_template('chat.html')
 
+# Route pour le chat
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
@@ -350,7 +341,7 @@ def chat():
             {
                 "type": "function",
                 "function": {
-                    "name": "category_analysis",
+                    "name": "generate_and_serve_category_image",
                     "description": "Analyse category trends",
                     "parameters": {
                         "type": "object",
@@ -358,8 +349,8 @@ def chat():
                         "required": []
                     },
                 },
-        }
-        ]
+            }
+            ]
         
         # Interaction avec l'API OpenAI
         openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -372,6 +363,7 @@ def chat():
 
         tool_calls = response['choices'][0]['message'].get('tool_calls')
 
+        # Si l'API OpenAI a appelé une fonction, je l'exécute
         if tool_calls:
             available_functions = {
                 "game": game,
@@ -381,16 +373,18 @@ def chat():
                 "remove_value_collection": remove_value_collection,
                 "remove_collection": remove_collection,
                 "edit_couple_collection": edit_couple_collection,
-                "category_analysis": category_analysis
+                "generate_and_serve_category_image": generate_and_serve_category_image
             }
 
             function_to_call = available_functions[tool_calls[0].function.name]
             function_args = json.loads(tool_calls[0].function.arguments)
             if function_to_call == game:
                 return jsonify({"redirect": tool_calls[0].function.name})
-            if function_to_call == category_analysis:
-                image_url = get_category_plot_url()
-                return jsonify({'bot': 'Voici l\'analyse des catégories :', 'image_url': image_url})
+            if function_to_call == generate_and_serve_category_image:
+                image_url = function_to_call()
+                return jsonify({'bot': 'There the analyse of category trends:', 'image_url': image_url})
+            if function_to_call == print_collection:
+                return jsonify({'bot': function_to_call(function_args)})
             bot_response = function_to_call(function_args)
 
         # Je recherche les mots clés importants dans la question de l'utilisateur et la réponse du bot
@@ -400,21 +394,28 @@ def chat():
         category = get_openai_classification(keywords)
 
         # Je sauvegarde de la conversation dans MongoDB
-        mongo_collection.insert_one({'user': user_message, 'bot': bot_response, 'similarity': round(similarity, 1), 'keywords': keywords, 'category': category})
+        mongo_collection.insert_one({'user': user_message, 'bot': bot_response, 'keywords': keywords, 'category': category})
         
         # Je met en cache de la dernière question et réponse avec Redis
         redis_client.set('last_user_question', user_message)
         redis_client.set('last_bot_response', bot_response)
-        redis_client.set('similarity', similarity)
         
         return jsonify({'bot': bot_response})
     except Exception as e:
         print(e)
         return jsonify({'bot': e}), 500
-    
-@app.route('/download/<filename>')
-def download_file(filename):
-    return send_file(filename, as_attachment=True, attachment_filename=filename)
+
+@app.route('/static/graph/<filename>')
+def serve_static_image(filename):
+    image_path = os.path.join('static', 'graph', filename)
+    @after_this_request
+    def remove_file(response):
+        try:
+            os.remove(image_path)
+        except Exception as error:
+            app.logger.error("Error removing or closing downloaded file handle", error)
+        return response
+    return send_file(image_path, mimetype='image/png')
 
 def create_collection(parameters):
     name=parameters.get("name")
@@ -466,48 +467,41 @@ def remove_collection(parameters):
 
 def serialize_doc(doc):
     """Serialize a MongoDB document."""
-    ids = []
-    keys = []
-    values = []
-    for key, value in doc.items():
-        if key == "_id":
-            ids.append(value)
+    serialized_lines = []
+    id_str = str(doc.get('_id', ''))  # Convert ObjectId to string
+    for i, (key, value) in enumerate(doc.items()):
+        if key == '_id':
+            continue 
+        if i == 1:  
+            serialized_lines.append((id_str, key, str(value)))
         else:
-            keys.append(key)
-            values.append(value)
-    ids.append("")
-    keys.append("")
-    values.append("")
-    return ids, keys, values
+            serialized_lines.append(('', key, str(value))) 
+    return serialized_lines
 
+def print_collection_name(name):
+    collection_cursor = mongo_db[name].find()
+    all_serialized_lines = []
+
+    for doc in collection_cursor:
+        serialized_lines = serialize_doc(doc)
+        all_serialized_lines.extend(serialized_lines)
+
+    headers = ['Id', 'Key', 'Value']
+    
+    table = tabulate(all_serialized_lines, headers=headers, tablefmt="pipe")
+    html_table = markdown(table, extensions=['markdown.extensions.nl2br'])
+    download_link = url_for('download_collection_as_excel', collection_name=name)
+    
+    html_header = f"<h1>Collection: {name}</h1>"
+    full_html = f"{html_header}\n{html_table}\n\n\n<a href='{download_link}'>Télécharger les données en format Excel</a>"
+
+    sanitized_html = bleach.clean(full_html, tags=['h1', 'table', 'tr', 'th', 'td', 'a'], strip=True)
+
+    return sanitized_html
 
 def print_collection(parameters):
     collection_name = parameters.get("collection")
     return print_collection_name(collection_name)
-
-def print_collection_name(name):
-    collection_cursor = mongo_db[name].find()
-    collection_list = [(ids, keys, values) for ids, keys, values in (serialize_doc(doc) for doc in collection_cursor)]
-
-    all_ids = [id for ids, _, _ in collection_list for id in ids]
-    all_keys = [key for _, keys, _ in collection_list for key in keys]
-    all_values = [value for _, _, values in collection_list for value in values]
-
-    headers = ['Id','Key', 'Value']
-
-    html_header = f"Collection: {name}"
-
-    id_key_value_pairs = list(zip(all_ids,all_keys, all_values))
-
-    table = tabulate(id_key_value_pairs, headers=headers, tablefmt="pipe")
-
-    html_table = markdown(table, extensions=['markdown.extensions.nl2br'])
-
-    full_html = f"{html_header}\n{html_table}"
-
-    sanitized_html = bleach.clean(full_html, tags=[], strip=True)
-
-    return sanitized_html
 
 @app.route('/game', methods=['GET'])
 def game():
@@ -558,9 +552,6 @@ def getBestScores():
     except Exception as e:
         print(e)
         return jsonify({'bot': e}), 500
-
-    
-
 
 @app.route('/gameChat', methods=['POST'])
 def gameChat():
