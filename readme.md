@@ -46,12 +46,12 @@ docker-compose up --build -d
     - MongoDB :
 
 ```bash
-docker exec -it bigdata-docker-mongo-1 mongosh
+docker exec -it bigdata-docker-flask-mongo-1 mongosh
 ```
 - Redis :
 
 ```bash
-docker exec -it bigdata-docker-redis-1 redis-cli
+docker exec -it bigdata-docker-flask-redis-1 redis-cli
 ```
 
 6. **Vérification des données**
