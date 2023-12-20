@@ -355,7 +355,7 @@ def chat():
         # Interaction avec l'API OpenAI
         openai.api_key = os.getenv('OPENAI_API_KEY')
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4-turbo",
             messages=messages,
             tools=tools,
         )
@@ -572,7 +572,7 @@ def gameChat():
 
         openai.api_key = os.getenv('OPENAI_API_KEY')
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4-turbo",
             messages=messages,
         )
         bot_response = response['choices'][0]['message']['content']
